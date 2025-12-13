@@ -1,0 +1,9 @@
+target/
+logs/
+*.log
+*.class
+*.jar
+.idea/
+*.iml
+.DS_Store
+apidocs/

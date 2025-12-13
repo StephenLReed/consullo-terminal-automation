@@ -1,0 +1,22 @@
+package com.consullo.terminal.core.events;
+
+import java.time.Instant;
+
+/**
+ * Represents a terminal-state change event that can be used to trigger partial repaint and transcript capture.
+ *
+ * <p>The reference implementation uses a coarse damage model (changed row ranges). This is sufficient for capture
+ * and for a Swing view scaffold. If higher-fidelity repaint is required, extend this to include rectangles.
+ *
+ * @param timestampUtc event timestamp in UTC
+ * @param changedRowStart first changed row (inclusive)
+ * @param changedRowEnd last changed row (exclusive)
+ * @param fullRedraw true when the change represents a full screen redraw (e.g., clear screen)
+ * @since 1.0
+ */
+public record DamageEvent(
+    Instant timestampUtc,
+    int changedRowStart,
+    int changedRowEnd,
+    boolean fullRedraw) {
+}

@@ -41,40 +41,43 @@ public final class TerminalAutomationDemo {
    * @throws Exception if demo fails
    */
   public static void main(final String[] args) throws Exception {
-    String javaHome = System.getProperty("java.home");
-    String javaBin = javaHome + "/bin/java";
-    String classPath = System.getProperty("java.class.path");
-
+    // Use a simple shell script to test terminal capture instead of spawning Java
     List<String> cmd = new ArrayList<>();
-    cmd.add(javaBin);
-    cmd.add("--enable-native-access=ALL-UNNAMED");
-    cmd.add("-cp");
-    cmd.add(classPath);
-    cmd.add(TerminalFixtureApp.class.getName());
+    cmd.add("/bin/bash");
+    cmd.add("-c");
+    cmd.add("echo 'fixture: start'; echo 'fixture: line 1'; echo 'fixture: line 2'; " +
+            "for i in 1 2 3; do printf '\\rspinner |'; sleep 0.05; printf '\\rspinner /'; sleep 0.05; done; " +
+            "echo; echo 'fixture: after spinner'; echo 'fixture: done'");
 
     final Path workDir = Path.of(".").toAbsolutePath().normalize();
 
-    final PtyProcessConfig config = new PtyProcessConfig(cmd, workDir, null, 120, 40);
+    // Use small terminal height (3 rows) so content scrolls into history quickly
+    final PtyProcessConfig config = new PtyProcessConfig(cmd, workDir, null, 120, 3);
     final PtyProcessControllerPty4j pty = new PtyProcessControllerPty4j(config);
 
-    final TerminalCore core = new JediTermCore(120, 40, 50_000);
-    final CaptureEngineConfig captureConfig = new CaptureEngineConfig(2, 350L, true);
+    final TerminalCore core = new JediTermCore(120, 3, 50_000);
+    // volatileRowCount=1 to skip bottom status row, stabilityWindowMillis=100 for faster screen emission
+    final CaptureEngineConfig captureConfig = new CaptureEngineConfig(1, 100L, true);
     final CaptureEngine captureEngine = new CaptureEngine(captureConfig, new DefaultChurnFilterPolicy());
 
     try (final ClaudeSession session = ClaudeSession.create(pty, core, captureEngine)) {
       LOGGER.info("Started demo PTY PID={}", pty.pid());
 
+      System.out.println("=== Captured Transcript ===");
       int emptyPolls = 0;
-      while (emptyPolls < 3) {
-        TranscriptEvent event = session.transcriptQueue().poll(500, TimeUnit.MILLISECONDS);
+      int totalEvents = 0;
+      while (emptyPolls < 5) {
+        TranscriptEvent event = session.transcriptQueue().poll(200, TimeUnit.MILLISECONDS);
         if (event != null) {
           System.out.print(event.text());
+          totalEvents++;
           emptyPolls = 0;
         } else if (!pty.isAlive()) {
           emptyPolls++;
         }
       }
-      LOGGER.info("Demo completed, process exited");
+      System.out.println("=== End Transcript (" + totalEvents + " events) ===");
+      LOGGER.info("Demo completed");
     }
   }
 }

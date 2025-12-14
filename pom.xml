@@ -17,11 +17,16 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Consullo Terminal Automation</name>
+  <name>ConsulloTerminalAutomation</name>
   <description>
     PTY-driven terminal automation with churn-suppressed transcript capture
     for interactive CLIs (e.g., Claude Code).
   </description>
+
+  <properties>
+    <!-- JediTerm core (terminal emulator/parsing + text buffer) -->
+    <jediterm.version>3.57</jediterm.version>
+  </properties>
 
   <dependencies>
 
@@ -50,6 +55,13 @@
       <groupId>org.jetbrains.pty4j</groupId>
       <artifactId>pty4j</artifactId>
       <version>0.13.11</version>
+    </dependency>
+
+    <!-- ===== Terminal emulator core (ANSI/VT parsing, scrollback buffer) ===== -->
+    <dependency>
+      <groupId>org.jetbrains.jediterm</groupId>
+      <artifactId>jediterm-core</artifactId>
+      <version>${jediterm.version}</version>
     </dependency>
 
     <!-- ===== Testing ===== -->

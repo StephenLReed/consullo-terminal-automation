@@ -1,5 +1,7 @@
 package com.consullo.terminal.core.events;
 
+import com.consullo.terminal.core.TerminalSnapshot;
+
 /**
  * Listener interface for terminal damage events.
  *
@@ -10,8 +12,8 @@ public interface DamageListener {
   /**
    * Called when the terminal state changes.
    *
+   * @param snapshot current terminal snapshot
    * @param damageEvent damage event describing the changed region
-   * @throws Exception if listener processing fails
    */
-  void onDamage(final DamageEvent damageEvent) throws Exception;
+  void onDamage(TerminalSnapshot snapshot, DamageEvent damageEvent);
 }

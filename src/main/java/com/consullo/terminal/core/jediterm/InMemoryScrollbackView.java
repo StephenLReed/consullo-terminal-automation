@@ -9,6 +9,9 @@ import org.apache.commons.lang3.Validate;
 /**
  * Simple in-memory scrollback adapter used by the starter implementation.
  *
+ * <p>This implementation treats all lines as history lines with no screen content,
+ * suitable for testing and simple use cases where screen tracking is not needed.</p>
+ *
  * @since 1.0
  */
 public final class InMemoryScrollbackView implements ScrollbackView {
@@ -19,29 +22,46 @@ public final class InMemoryScrollbackView implements ScrollbackView {
    * Creates a new view over the provided scrollback list.
    *
    * @param scrollback backing scrollback list
-   * @throws Exception if scrollback is null
    */
-  public InMemoryScrollbackView(final List<String> scrollback) throws Exception {
+  public InMemoryScrollbackView(final List<String> scrollback) {
     Validate.notNull(scrollback, "scrollback must not be null");
     this.scrollback = scrollback;
   }
 
   @Override
-  public int lineCount() throws Exception {
+  public int historyLineCount() {
     return this.scrollback.size();
   }
 
   @Override
-  public List<String> readLines(final int startInclusive, final int endExclusive) throws Exception {
-    Validate.isTrue(startInclusive >= 0, "startInclusive must be non-negative");
-    Validate.isTrue(endExclusive >= startInclusive, "endExclusive must be >= startInclusive");
-    Validate.isTrue(endExclusive <= this.scrollback.size(), "endExclusive must be within bounds");
+  public int screenRowCount() {
+    return 0; // In-memory view has no screen concept
+  }
 
-    final List<String> result = new ArrayList<>(endExclusive - startInclusive);
-    for (int i = startInclusive; i < endExclusive; i++) {
+  @Override
+  public List<String> readHistoryLines(final int startInclusive, final int endExclusive) {
+    if (startInclusive < 0) {
+      throw new IllegalArgumentException("startInclusive must be non-negative");
+    }
+    if (endExclusive < startInclusive) {
+      throw new IllegalArgumentException("endExclusive must be >= startInclusive");
+    }
+
+    int end = Math.min(endExclusive, this.scrollback.size());
+    if (startInclusive >= end) {
+      return Collections.emptyList();
+    }
+
+    final List<String> result = new ArrayList<>(end - startInclusive);
+    for (int i = startInclusive; i < end; i++) {
       result.add(this.scrollback.get(i));
     }
 
     return Collections.unmodifiableList(result);
+  }
+
+  @Override
+  public List<String> readScreenLines(final int startInclusive, final int endExclusive) {
+    return Collections.emptyList(); // In-memory view has no screen concept
   }
 }

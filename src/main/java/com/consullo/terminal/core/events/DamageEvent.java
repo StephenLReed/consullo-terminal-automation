@@ -19,4 +19,24 @@ public record DamageEvent(
     int changedRowStart,
     int changedRowEnd,
     boolean fullRedraw) {
+
+  /**
+   * Creates a full-redraw damage event.
+   *
+   * @return full redraw event
+   */
+  public static DamageEvent createFullRedraw() {
+    return new DamageEvent(Instant.now(), 0, Integer.MAX_VALUE, true);
+  }
+
+  /**
+   * Creates a partial damage event for specified row range.
+   *
+   * @param startRow first changed row (inclusive)
+   * @param endRow last changed row (exclusive)
+   * @return partial damage event
+   */
+  public static DamageEvent rows(int startRow, int endRow) {
+    return new DamageEvent(Instant.now(), startRow, endRow, false);
+  }
 }

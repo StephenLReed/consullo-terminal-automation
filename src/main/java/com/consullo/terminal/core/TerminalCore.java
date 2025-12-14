@@ -59,12 +59,4 @@ public interface TerminalCore {
    * @throws Exception if listener cannot be added
    */
   void addDamageListener(final DamageListener listener) throws Exception;
-
-  /**
-   * Notifies the core of a damage event (usually called by internal emulation code).
-   *
-   * @param damageEvent damage event describing which regions changed
-   * @throws Exception if event handling fails
-   */
-  void publishDamage(final DamageEvent damageEvent) throws Exception;
 }

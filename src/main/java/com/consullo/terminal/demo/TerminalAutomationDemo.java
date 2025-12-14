@@ -1,17 +1,18 @@
 package com.consullo.terminal.demo;
 
+import com.consullo.terminal.capture.CaptureEngine;
 import com.consullo.terminal.capture.CaptureEngineConfig;
+import com.consullo.terminal.capture.DefaultChurnFilterPolicy;
+import com.consullo.terminal.capture.TranscriptEvent;
 import com.consullo.terminal.core.TerminalCore;
 import com.consullo.terminal.core.jediterm.JediTermCore;
 import com.consullo.terminal.driver.ClaudeSession;
 import com.consullo.terminal.pty.PtyProcessConfig;
-import com.consullo.terminal.pty.PtyProcessController;
 import com.consullo.terminal.pty.PtyProcessControllerPty4j;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public final class TerminalAutomationDemo {
 
     List<String> cmd = new ArrayList<>();
     cmd.add(javaBin);
-    cmd.add("--enable-native-access=ALL-UNNAMED"); // optional but silences the JNA warning
+    cmd.add("--enable-native-access=ALL-UNNAMED");
     cmd.add("-cp");
     cmd.add(classPath);
     cmd.add(TerminalFixtureApp.class.getName());
@@ -54,21 +55,22 @@ public final class TerminalAutomationDemo {
     final Path workDir = Path.of(".").toAbsolutePath().normalize();
 
     final PtyProcessConfig config = new PtyProcessConfig(cmd, workDir, null, 120, 40);
-    final PtyProcessController pty = new PtyProcessControllerPty4j(config);
+    final PtyProcessControllerPty4j pty = new PtyProcessControllerPty4j(config);
 
-    final TerminalCore core = new JediTermCore(120, 40);
+    final TerminalCore core = new JediTermCore(120, 40, 50_000);
     final CaptureEngineConfig captureConfig = new CaptureEngineConfig(2, 350L, true);
+    final CaptureEngine captureEngine = new CaptureEngine(captureConfig, new DefaultChurnFilterPolicy());
 
-    try (final ClaudeSession session = new ClaudeSession(pty, core, captureConfig)) {
+    try (final ClaudeSession session = ClaudeSession.create(pty, core, captureEngine)) {
       LOGGER.info("Started demo PTY PID={}", pty.pid());
 
       int emptyPolls = 0;
       while (emptyPolls < 3) {
-        final JSONObject event = session.pollTranscriptEvent(500, TimeUnit.MILLISECONDS);
+        TranscriptEvent event = session.transcriptQueue().poll(500, TimeUnit.MILLISECONDS);
         if (event != null) {
-          System.out.print(event.getString("text"));
+          System.out.print(event.text());
           emptyPolls = 0;
-        } else if (!session.isAlive()) {
+        } else if (!pty.isAlive()) {
           emptyPolls++;
         }
       }

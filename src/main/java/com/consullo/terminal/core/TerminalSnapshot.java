@@ -1,28 +1,89 @@
 package com.consullo.terminal.core;
 
-import java.util.List;
+import java.time.Instant;
 
 /**
- * Immutable snapshot of terminal state intended for capture decisions and UI rendering.
+ * Immutable snapshot of terminal state needed by capture and orchestration
+ * logic.
  *
- * <p>This snapshot is a simplified representation:
- * - A list of visible rows as plain text
- * - Cursor position
- * - Whether the alternate screen buffer is active
- *
- * <p>The reference capture engine operates on plain-text rows and scrollback deltas, and does not require
- * detailed cell attributes. If future use cases require attributes (colors, styles, hyperlinks), extend this
- * object to include a cell grid representation.
- *
- * @param rows visible terminal rows, in top-to-bottom order
- * @param cursorRow cursor row (0-based)
- * @param cursorColumn cursor column (0-based)
- * @param alternateScreen true when the terminal is currently in the alternate screen buffer
- * @since 1.0
+ * <p>
+ * This is intentionally minimal. The capture engine should prefer scrollback
+ * for committed output, but it also needs to know when the terminal is in
+ * alternate-screen mode to suppress repaint churn.
+ * </p>
  */
-public record TerminalSnapshot(
-    List<String> rows,
-    int cursorRow,
-    int cursorColumn,
-    boolean alternateScreen) {
+public final class TerminalSnapshot {
+
+  private final Instant timestamp;
+  private final int cols;
+  private final int rows;
+  private final boolean alternateScreen;
+
+  private TerminalSnapshot(Builder b) {
+    this.timestamp = b.timestamp;
+    this.cols = b.cols;
+    this.rows = b.rows;
+    this.alternateScreen = b.alternateScreen;
+  }
+
+  public Instant getTimestamp() {
+    return timestamp;
+  }
+
+  public int getCols() {
+    return cols;
+  }
+
+  public int getRows() {
+    return rows;
+  }
+
+  public boolean isAlternateScreen() {
+    return alternateScreen;
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+
+    private Instant timestamp;
+    private int cols;
+    private int rows;
+    private boolean alternateScreen;
+
+    private Builder() {
+    }
+
+    public Builder timestamp(Instant ts) {
+      this.timestamp = ts;
+      return this;
+    }
+
+    public Builder cols(int cols) {
+      this.cols = cols;
+      return this;
+    }
+
+    public Builder rows(int rows) {
+      this.rows = rows;
+      return this;
+    }
+
+    public Builder alternateScreen(boolean alternateScreen) {
+      this.alternateScreen = alternateScreen;
+      return this;
+    }
+
+    public TerminalSnapshot build() {
+      if (timestamp == null) {
+        timestamp = Instant.now();
+      }
+      if (cols <= 0 || rows <= 0) {
+        throw new IllegalArgumentException("cols/rows must be positive.");
+      }
+      return new TerminalSnapshot(this);
+    }
+  }
 }
